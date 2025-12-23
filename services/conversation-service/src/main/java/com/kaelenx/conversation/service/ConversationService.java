@@ -1,5 +1,7 @@
 package com.kaelenx.conversation.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kaelenx.conversation.client.AiChatRequest;
 import com.kaelenx.conversation.client.AiChatResponse;
 import com.kaelenx.conversation.client.AiOrchestratorClient;
@@ -15,6 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Service for conversation management
@@ -28,6 +32,7 @@ public class ConversationService {
     private final MessageRepository messageRepository;
     private final AiOrchestratorClient aiOrchestratorClient;
     private final SnowflakeIdGenerator idGenerator;
+    private final ObjectMapper objectMapper;
     
     /**
      * Create a new conversation
@@ -110,12 +115,7 @@ public class ConversationService {
         }
         
         // Create assistant message with FINAL status
-        String providerTrace = String.format("{\"provider\":\"%s\",\"model\":\"%s\",\"tokenIn\":%d,\"tokenOut\":%d,\"latencyMs\":%d}",
-                aiResponse.getProvider(),
-                aiResponse.getModel(),
-                aiResponse.getTokenIn() != null ? aiResponse.getTokenIn() : 0,
-                aiResponse.getTokenOut() != null ? aiResponse.getTokenOut() : 0,
-                aiResponse.getLatencyMs() != null ? aiResponse.getLatencyMs() : 0);
+        String providerTrace = buildProviderTrace(aiResponse);
         
         Message assistantMessage = Message.builder()
                 .id(idGenerator.nextId())
@@ -141,5 +141,20 @@ public class ConversationService {
                 .assistantMessageId(assistantMessage.getId())
                 .replyText(aiResponse.getReplyText())
                 .build();
+    }
+    
+    private String buildProviderTrace(AiChatResponse aiResponse) {
+        try {
+            Map<String, Object> trace = new HashMap<>();
+            trace.put("provider", aiResponse.getProvider());
+            trace.put("model", aiResponse.getModel());
+            trace.put("tokenIn", aiResponse.getTokenIn());
+            trace.put("tokenOut", aiResponse.getTokenOut());
+            trace.put("latencyMs", aiResponse.getLatencyMs());
+            return objectMapper.writeValueAsString(trace);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize provider trace", e);
+            return "{}";
+        }
     }
 }

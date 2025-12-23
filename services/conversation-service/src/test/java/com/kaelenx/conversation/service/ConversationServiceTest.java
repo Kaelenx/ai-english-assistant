@@ -1,5 +1,6 @@
 package com.kaelenx.conversation.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kaelenx.conversation.client.AiChatRequest;
 import com.kaelenx.conversation.client.AiChatResponse;
 import com.kaelenx.conversation.client.AiOrchestratorClient;
@@ -35,12 +36,15 @@ class ConversationServiceTest {
     @Mock
     private SnowflakeIdGenerator idGenerator;
     
+    private ObjectMapper objectMapper;
+    
     private ConversationService service;
     
     @BeforeEach
     void setUp() {
+        objectMapper = new ObjectMapper();
         service = new ConversationService(conversationRepository, messageRepository, 
-                aiOrchestratorClient, idGenerator);
+                aiOrchestratorClient, idGenerator, objectMapper);
     }
     
     @Test

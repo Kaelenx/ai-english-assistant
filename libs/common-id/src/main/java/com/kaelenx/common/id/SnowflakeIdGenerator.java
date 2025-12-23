@@ -66,7 +66,7 @@ public class SnowflakeIdGenerator {
                     String.format("Clock moved backwards by %d ms. Refusing to generate ID", offset));
             }
             try {
-                wait(offset << 1);
+                Thread.sleep(offset << 1);
                 timestamp = currentTimeMillis();
                 if (timestamp < lastTimestamp) {
                     throw new RuntimeException("Clock moved backwards. Refusing to generate ID");
